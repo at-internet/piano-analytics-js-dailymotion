@@ -30,7 +30,7 @@ Download the `dailymotion-pa-connector.js` plugin directly from [this repo](dail
   pa.setConfigurations({
     // Basic configuration to send events
     site: 123456789,
-    collectDomain: "https://logsx.xiti.com",
+    collectDomain: "https://xxxxxxx.pa-cd.com",
   });
 </script>
 <script src="dailymotion-pa-connector.js"></script>
@@ -50,7 +50,6 @@ Dailymotion provides the following code to embed its video player on an HTML pag
         dailymotion
           .createPlayer("player-daily", {
             video: "x730nnd",
-            player: "playerID",
           })
           .then((player) => {
             // Setup PA connector
@@ -62,7 +61,6 @@ Dailymotion provides the following code to embed its video player on an HTML pag
     window.dailymotion
       .createPlayer("player-daily", {
         video: "x730nnd",
-        player: "playerID",
       })
       .then((player) => {
         // Setup PA connector
@@ -117,10 +115,10 @@ Method: `paDailymotionConnector.params = <propertiesObject>`
       pa.setConfigurations({
         // Basic configuration to send events
         site: 123456789,
-        collectDomain: "https://logsx.xiti.com",
+        collectDomain: "https://xxxxxxx.pa-cd.com",
       });
     </script>
-    <script defer src="dailymotion-pa-connector.js"></script>
+    <script src="dailymotion-pa-connector.js"></script>
   </head>
   <body>
     <script src="https://geo.dailymotion.com/libs/player/x1234.js"></script>
@@ -143,7 +141,6 @@ Method: `paDailymotionConnector.params = <propertiesObject>`
             dailymotion
               .createPlayer("player-daily", {
                 video: "x730nnd",
-                player: "playerID",
               })
               .then((player) => {
                 setupPaConnector(player);
@@ -155,7 +152,6 @@ Method: `paDailymotionConnector.params = <propertiesObject>`
         window.dailymotion
           .createPlayer("player-daily", {
             video: "x730nnd",
-            player: "playerID",
           })
           .then((player) => {
             setupPaConnector(player);
