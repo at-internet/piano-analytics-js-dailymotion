@@ -1,22 +1,20 @@
 class paDailymotionPlayer {
-
+  // settings it true as default for first video
+  isVideoEnded = true;
   constructor() {
     this.paCustomParams = {}
   }
-
   set params(params) {
     this.paCustomParams = params
   }
-
   set media(media) {
     this.videoMedia = media
   }
   avataginit = (state) => {
     this.paCustomParams.av_content_id = state.videoId;
     this.paCustomParams.av_content = state.videoTitle;
-    this.paCustomParams.av_content_duration = state.videoDuration*1000;
+    this.paCustomParams.av_content_duration = state.videoDuration * 1000;
     this.videoMedia.setProps(this.paCustomParams);
-
     // to check pause state
     this.playbackPaused = true;
     // to control first play event
@@ -25,6 +23,8 @@ class paDailymotionPlayer {
     this.firstPlaybackStartEvent = true;
     // to save old Cursor Position at seek start
     this.oldCursorPosition = 0;
+    // to check video end event when video change 
+    this.isVideoEnded = false;
     // to check previous fullscreen on
     this.fullscreenOn = false;
     // to check volume change
@@ -35,6 +35,8 @@ class paDailymotionPlayer {
     this.videoQuality = "";
     // to set the value of ad end
     this.adEndTime = 0;
+    // to track video time
+    this.videoTime = 0;
   }
   onPlayerReady = (player) => {
     this.instanciatedPlayer = player;
@@ -44,11 +46,16 @@ class paDailymotionPlayer {
     this.instanciatedPlayer.on(dailymotion.events.PLAYER_START,
       (state) => {
         this.avataginit(state);
-        /*Testing :*/ window.eventStart();
+        /*Testing :*/
+        window.eventStart();
       }
     );
     this.instanciatedPlayer.on(dailymotion.events.PLAYER_VIDEOCHANGE,
       (state) => {
+        // if video_end in case of user interaction
+        if (!this.isVideoEnded) {
+          this.videoMedia.playbackStopped(this.videoTime * 1000);
+        }
         this.avataginit(state);
       }
     );
@@ -58,35 +65,33 @@ class paDailymotionPlayer {
     this.instanciatedPlayer.on(dailymotion.events.VIDEO_PLAY,
       (state) => {
         // if player is starting
-        if(this.firstPlayEvent){
+        if (this.firstPlayEvent) {
           this.firstPlayEvent = false;
-          this.videoMedia.play(state.videoTime*1000);
+          this.videoMedia.play(state.videoTime * 1000);
         }
       }
     );
     this.instanciatedPlayer.on(dailymotion.events.VIDEO_BUFFERING,
       (state) => {
-        
         // if ad end time and this event has same videoTime then ignore
-        if(this.adEndTime && this.adEndTime === parseInt(state.videoTime)) return;
+        if (this.adEndTime && this.adEndTime === parseInt(state.videoTime)) return;
         /**
          * always send playbackPaused event before buffering start
          * before "playbackStart" no need to send playbackPaused event
          * if player is already paused state, no need to send pause event
          */
-        if(!this.firstPlaybackStartEvent && !this.playbackPaused){
+        if (!this.firstPlaybackStartEvent && !this.playbackPaused) {
           this.playbackPaused = true;
-          this.videoMedia.playbackPaused(state.videoTime*1000);
+          this.videoMedia.playbackPaused(state.videoTime * 1000);
         }
-        this.oldCursorPosition = state.videoTime*1000;
-        this.videoMedia.bufferStart(state.videoTime*1000);
+        this.oldCursorPosition = state.videoTime * 1000;
+        this.videoMedia.bufferStart(state.videoTime * 1000);
       }
     );
     this.instanciatedPlayer.on(dailymotion.events.VIDEO_PLAYING,
       (state) => {
         // if already playing ignore it
-        if(!this.playbackPaused) return;
-
+        if (!this.playbackPaused) return;
         this.playbackPaused = false;
         if (this.firstPlaybackStartEvent) {
           // set player volume at start time
@@ -95,46 +100,51 @@ class paDailymotionPlayer {
           this.playerPlaybackSpeed = state.playerPlaybackSpeed;
           // set video quality at start time
           this.videoQuality = state.videoQuality;
-          this.videoMedia.playbackStart(state.videoTime*1000);
+          this.videoMedia.playbackStart(state.videoTime * 1000);
           this.firstPlaybackStartEvent = false;
         } else {
-          this.videoMedia.playbackResumed(state.videoTime*1000);
+          this.videoMedia.playbackResumed(state.videoTime * 1000);
         }
       }
     );
     this.instanciatedPlayer.on(dailymotion.events.VIDEO_PAUSE,
       (state) => {
         this.playbackPaused = true;
-        this.videoMedia.playbackPaused(state.videoTime*1000);
+        this.videoMedia.playbackPaused(state.videoTime * 1000);
       }
     );
     this.instanciatedPlayer.on(dailymotion.events.VIDEO_END,
       (state) => {
-        this.videoMedia.playbackStopped(state.videoTime*1000);
+        this.isVideoEnded = true;
+        this.videoMedia.playbackStopped(state.videoTime * 1000);
       }
     );
     this.instanciatedPlayer.on(dailymotion.events.VIDEO_SEEKSTART,
       (state) => {
         // if ad end time and this event has same videoTime then ignore
-        if(this.adEndTime && this.adEndTime === parseInt(state.videoTime)) return;
-
+        if (this.adEndTime && this.adEndTime === parseInt(state.videoTime)) return;
         // if player already paused dont send pause event
-        if(! this.playbackPaused){
+        if (!this.playbackPaused) {
           this.playbackPaused = true;
-          this.videoMedia.playbackPaused(state.videoTime*1000);
+          this.videoMedia.playbackPaused(state.videoTime * 1000);
         }
-        this.oldCursorPosition = state.videoTime*1000;
+        this.oldCursorPosition = state.videoTime * 1000;
       }
     );
     this.instanciatedPlayer.on(dailymotion.events.VIDEO_SEEKEND,
       (state) => {
         // if ad end time and this event has same videoTime then ignore
-        if(this.adEndTime && this.adEndTime === parseInt(state.videoTime)) return;
-
+        if (this.adEndTime && this.adEndTime === parseInt(state.videoTime)) return;
         // do not send this evens before playback start event
-        if(!this.firstPlaybackStartEvent ){
-          this.videoMedia.seek(this.oldCursorPosition, state.videoTime*1000);
+        if (!this.firstPlaybackStartEvent) {
+          this.videoMedia.seek(this.oldCursorPosition, state.videoTime * 1000);
         }
+      }
+    );
+    // To track video time
+    this.instanciatedPlayer.on(dailymotion.events.VIDEO_TIMECHANGE,
+      (state) => {
+        this.videoTime = state.videoTime;
       }
     );
     /**
@@ -146,7 +156,7 @@ class paDailymotionPlayer {
       (state) => {
         // do not send this evens before playback start event
         // do not send this event if playerPlaybackSpeed did not change
-        if(!this.firstPlaybackStartEvent && (this.playerPlaybackSpeed !== state.playerPlaybackSpeed)){
+        if (!this.firstPlaybackStartEvent && (this.playerPlaybackSpeed !== state.playerPlaybackSpeed)) {
           this.playerPlaybackSpeed = state.playerPlaybackSpeed;
           this.videoMedia.setPlaybackSpeed(state.playerPlaybackSpeed);
         }
@@ -160,7 +170,7 @@ class paDailymotionPlayer {
     this.instanciatedPlayer.on(dailymotion.events.AD_END,
       (state) => {
         this.adEndTime = parseInt(state.videoTime);
-        if(state.adEndedReason === "skipped"){
+        if (state.adEndedReason === "skipped") {
           this.videoMedia.adSkip();
         }
       }
@@ -172,10 +182,10 @@ class paDailymotionPlayer {
     );
     this.instanciatedPlayer.on(dailymotion.events.PLAYER_PRESENTATIONMODECHANGE,
       (state) => {
-        if(state.playerPresentationMode === "fullscreen"){
+        if (state.playerPresentationMode === "fullscreen") {
           this.fullscreenOn = true;
           this.videoMedia.fullscreenOn();
-        }else if(this.fullscreenOn){
+        } else if (this.fullscreenOn) {
           this.fullscreenOn = false;
           this.videoMedia.fullscreenOff();
         }
@@ -185,10 +195,19 @@ class paDailymotionPlayer {
       (state) => {
         // do not send this evens before playback start event
         // do not send this event if videoQuality did not change
-        if(!this.firstPlaybackStartEvent && (this.videoQuality !== state.videoQuality)){
+        if (!this.firstPlaybackStartEvent && (this.videoQuality !== state.videoQuality)) {
           this.videoQuality = state.videoQuality;
           console.log(state.videoQuality);
           this.videoMedia.quality();
+        }
+      }
+    );
+    this.instanciatedPlayer.on(dailymotion.events.VIDEO_SUBTITLESCHANGE,
+      (state) => {
+        if (state.videoSubtitles) {
+          this.videoMedia.subtitleOff();
+        } else {
+          this.videoMedia.subtitleOn();
         }
       }
     );
@@ -197,7 +216,7 @@ class paDailymotionPlayer {
         let volume = state.playerIsMuted ? 0 : state.playerVolume.toFixed(1);
         // do not send this evens before playback start event
         // do not send this event if volume did not change
-        if(!this.firstPlaybackStartEvent && (this.playerVolume !== volume)){
+        if (!this.firstPlaybackStartEvent && (this.playerVolume !== volume)) {
           this.playerVolume = volume;
           this.videoMedia.volume();
         }
@@ -208,13 +227,12 @@ class paDailymotionPlayer {
      */
     this.instanciatedPlayer.on(dailymotion.events.AD_START,
       (state) => {
-        if(!this.playbackPaused) {
+        if (!this.playbackPaused) {
           this.playbackPaused = true;
-          this.videoMedia.playbackPaused(state.videoTime*1000);
+          this.videoMedia.playbackPaused(state.videoTime * 1000);
         };
       }
     );
   }
 }
-
 const paDailymotionConnector = new paDailymotionPlayer();
