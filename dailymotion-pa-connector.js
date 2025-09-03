@@ -52,11 +52,18 @@ class paDailymotionPlayer {
     );
     this.instanciatedPlayer.on(dailymotion.events.PLAYER_VIDEOCHANGE,
       (state) => {
+        // Check if this is actually a new video or just a player reload
+        const isNewVideo = !this.paCustomParams.av_content_id || this.paCustomParams.av_content_id !== state.videoId;
+
         // if video_end in case of user interaction
-        if (!this.isVideoEnded) {
+        if (!this.isVideoEnded && isNewVideo) {
           this.videoMedia.playbackStopped(this.videoTime * 1000);
         }
-        this.avataginit(state);
+
+        // Only reinitialize if it's actually a new video
+        if (isNewVideo) {
+          this.avataginit(state);
+        }
       }
     );
     /**
@@ -197,7 +204,6 @@ class paDailymotionPlayer {
         // do not send this event if videoQuality did not change
         if (!this.firstPlaybackStartEvent && (this.videoQuality !== state.videoQuality)) {
           this.videoQuality = state.videoQuality;
-          console.log(state.videoQuality);
           this.videoMedia.quality();
         }
       }
@@ -205,9 +211,9 @@ class paDailymotionPlayer {
     this.instanciatedPlayer.on(dailymotion.events.VIDEO_SUBTITLESCHANGE,
       (state) => {
         if (state.videoSubtitles) {
-          this.videoMedia.subtitleOff();
-        } else {
           this.videoMedia.subtitleOn();
+        } else {
+          this.videoMedia.subtitleOff();
         }
       }
     );
